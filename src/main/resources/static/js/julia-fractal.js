@@ -15,6 +15,7 @@ const zoomCoeff = 120 //percent
 const zoomStep = 2 //percent
 const zoomTarget = 150; // Target zoom level for zooming in
 const MAX_ITERATIONS = 100;
+const colorScale = 255 / MAX_ITERATIONS;
 
 
 let fractalSprite;
@@ -60,16 +61,14 @@ function generateFractalImage(zoom) {
     const buffer = new Uint8Array(app.view.width * app.view.height * 4);
     for (let y = 0; y < app.view.height; y++) {
         for (let x = 0; x < app.view.width; x++) {
-
             const zx = ((x + offsetX) - app.view.width / 2) / (zoom * app.view.width);
             const zy = ((y + offsetY) - app.view.height / 2) / (zoom * app.view.height);
             const iter = calculateJulia(zx, zy, c0x, c0y);
             const offset = (y * app.view.width + x) * 4;
-            const offsetPrev = ((y - 2) * app.view.width + x - 2) * 4;
-            const color = buffer[offsetPrev] == 0 ? iter : iter | (iter << 8);
+            const color = iter * colorScale;
             buffer[offset] = color;
-            buffer[offset + 1] = color >> 8;
-            buffer[offset + 2] = color >> 16;
+            buffer[offset + 1] = (color + 50) % 256;
+            buffer[offset + 2] = (color + 100) % 256;
             buffer[offset + 3] = 255;
         }
     }
