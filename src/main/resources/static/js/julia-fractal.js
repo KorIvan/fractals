@@ -18,7 +18,6 @@ const MAX_ITERATIONS = 255;
 const colorScale = 255 / MAX_ITERATIONS;
 const scaleWait = 50 // ms
 
-
 let fractalSprite;
 let zoom = 30; //percent
 let isStarted = false;
