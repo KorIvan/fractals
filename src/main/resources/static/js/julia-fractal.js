@@ -13,8 +13,10 @@ const c0y = 0.27015;
 // let c0y = 0.006;
 const zoomCoeff = 120 //percent
 const zoomStep = 2 //percent
-const zoomTarget = 150; // Target zoom level for zooming in
-const MAX_ITERATIONS = 100;
+const zoomTarget = 200; // Target zoom level for zooming in
+const MAX_ITERATIONS = 255;
+const colorScale = 255 / MAX_ITERATIONS;
+const scaleWait = 50 // ms
 
 
 let fractalSprite;
@@ -23,6 +25,7 @@ let isStarted = false;
 let offsetX = 0
 let offsetY = 0
 let count = 0
+let refreshZoom = zoom * zoomCoeff / 100
 
 function calculateJulia(zx, zy, c0x, c0y) {
     let i;
@@ -60,16 +63,14 @@ function generateFractalImage(zoom) {
     const buffer = new Uint8Array(app.view.width * app.view.height * 4);
     for (let y = 0; y < app.view.height; y++) {
         for (let x = 0; x < app.view.width; x++) {
-
             const zx = ((x + offsetX) - app.view.width / 2) / (zoom * app.view.width);
             const zy = ((y + offsetY) - app.view.height / 2) / (zoom * app.view.height);
             const iter = calculateJulia(zx, zy, c0x, c0y);
             const offset = (y * app.view.width + x) * 4;
-            const offsetPrev = ((y - 2) * app.view.width + x - 2) * 4;
-            const color = buffer[offsetPrev] == 0 ? iter : iter | (iter << 8);
+            const color = iter * colorScale;
             buffer[offset] = color;
-            buffer[offset + 1] = color >> 8;
-            buffer[offset + 2] = color >> 16;
+            buffer[offset + 1] = (color + 50) % 256;
+            buffer[offset + 2] = (color + 100) % 256;
             buffer[offset + 3] = 255;
         }
     }
@@ -100,11 +101,21 @@ function startPause() {
     startSmoothZoomIn()
 
 }
-
 async function smoothZoomIn(duration) {
     while (isStarted && zoom < zoomTarget) {
         zoom = zoom + zoom * zoomStep / 100.0
-        updateFractal(zoom / 100.0);
+        if (zoom > refreshZoom || fractalSprite == null) {
+            updateFractal(zoom / 100.0);
+            refreshZoom = refreshZoom * zoomCoeff / 100.0
+        }
+        else {
+            fractalSprite.anchor.set(0.5, 0.5)
+            fractalSprite.scale.x += fractalSprite.scale.x * zoomStep / 100.0
+            fractalSprite.scale.y += fractalSprite.scale.y * zoomStep / 100.0
+            fractalSprite.position.y = 400 
+            fractalSprite.position.x = 400  
+            await sleep(scaleWait)
+        }
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
 }
