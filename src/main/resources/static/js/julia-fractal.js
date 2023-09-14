@@ -13,10 +13,10 @@ const c0y = 0.27015;
 // let c0y = 0.006;
 const zoomCoeff = 120 //percent
 const zoomStep = 2 //percent
-const zoomTarget = 150; // Target zoom level for zooming in
-const MAX_ITERATIONS = 100;
+const zoomTarget = 200; // Target zoom level for zooming in
+const MAX_ITERATIONS = 255;
 const colorScale = 255 / MAX_ITERATIONS;
-
+const scaleWait = 50 // ms
 
 let fractalSprite;
 let zoom = 30; //percent
@@ -24,6 +24,7 @@ let isStarted = false;
 let offsetX = 0
 let offsetY = 0
 let count = 0
+let refreshZoom = zoom * zoomCoeff / 100
 
 function calculateJulia(zx, zy, c0x, c0y) {
     let i;
@@ -99,11 +100,21 @@ function startPause() {
     startSmoothZoomIn()
 
 }
-
 async function smoothZoomIn(duration) {
     while (isStarted && zoom < zoomTarget) {
         zoom = zoom + zoom * zoomStep / 100.0
-        updateFractal(zoom / 100.0);
+        if (zoom > refreshZoom || fractalSprite == null) {
+            updateFractal(zoom / 100.0);
+            refreshZoom = refreshZoom * zoomCoeff / 100.0
+        }
+        else {
+            fractalSprite.anchor.set(0.5, 0.5)
+            fractalSprite.scale.x += fractalSprite.scale.x * zoomStep / 100.0
+            fractalSprite.scale.y += fractalSprite.scale.y * zoomStep / 100.0
+            fractalSprite.position.y = 400 
+            fractalSprite.position.x = 400  
+            await sleep(scaleWait)
+        }
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
 }
